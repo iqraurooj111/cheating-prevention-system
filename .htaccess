@@ -1,0 +1,20 @@
+# Online Exam Monitoring System - Apache Configuration
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "\.(sql|log|ini)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Set default index file
+DirectoryIndex index.php
+
+# Error pages (optional)
+# ErrorDocument 404 /index.php
+
