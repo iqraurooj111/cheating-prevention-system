@@ -258,7 +258,7 @@ class CheatingDetector {
     }
 
     startFullscreenCountdown() {
-        let secondsLeft = 30;
+    let secondsLeft = 15;
         
         // Create countdown modal if it doesn't exist
         if (!this.countdownModal) {
@@ -297,7 +297,7 @@ class CheatingDetector {
             
             if (secondsLeft <= 0) {
                 this.clearFullscreenCountdown();
-                this.handleViolation('fullscreen_exit', 'Failed to return to fullscreen within 30 seconds');
+                this.handleViolation('fullscreen_exit', 'Failed to return to fullscreen within 15 seconds');
             } else {
                 updateCountdown();
             }
