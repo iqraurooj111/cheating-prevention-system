@@ -189,16 +189,37 @@ class CheatingDetector {
             }
         });
         
-        // Cursor tracking: detect when mouse leaves the browser window
-        // Use mouseout on window and check relatedTarget/toElement to detect leaving viewport
-        window.addEventListener('mouseout', (e) => {
+        // Cursor tracking: detect when mouse/pointer leaves the browser window or document
+        // Use multiple events for broader browser support and check coordinates as a fallback.
+        const handlePossibleExit = (e) => {
             if (!this.readyToDetect()) return;
             e = e || window.event;
-            const from = e.relatedTarget || e.toElement;
-            if (!from) {
-                // No related target means the mouse left the browser window
-                this.handleViolation('cursor_leave', 'Mouse left the browser window');
+
+            // relatedTarget / toElement is null when the pointer left the document/window
+            const related = e.relatedTarget || e.toElement;
+
+            // Client coordinates - sometimes helpful as relatedTarget may be unreliable
+            const cx = typeof e.clientX === 'number' ? e.clientX : null;
+            const cy = typeof e.clientY === 'number' ? e.clientY : null;
+
+            const outOfBounds = cx !== null && cy !== null && (
+                cx <= 0 || cy <= 0 || cx >= window.innerWidth || cy >= window.innerHeight
+            );
+
+            if (!related || outOfBounds) {
+                // Treat as leaving the window/view and count as violation
+                this.handleViolation('cursor_leave', 'Mouse left the browser window or viewport');
             }
+        };
+
+        // mouseout covers many desktop browsers
+        window.addEventListener('mouseout', handlePossibleExit);
+
+        // pointerout/pointerleave for pointer-enabled browsers
+        window.addEventListener('pointerout', handlePossibleExit);
+        document.addEventListener('mouseleave', (e) => {
+            if (!this.readyToDetect()) return;
+            this.handleViolation('mouseleave', 'Mouse left the document area');
         });
 
         // Prevent context menu (right-click)
