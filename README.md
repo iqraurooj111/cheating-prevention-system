@@ -4,12 +4,12 @@ A comprehensive web-based online examination system with advanced cheating detec
 
 ## Features
 
-- 🔒 **Secure Authentication**: User registration and login with password hashing
-- 🛡️ **Cheating Detection**: Monitors tab switches, window blur, and fullscreen exits
-- ⏱️ **Timer Management**: Real-time countdown timer for exam duration
-- 📊 **Result Tracking**: Comprehensive result storage with score calculation
-- 📚 **Course Content**: Web development courses and learning materials
-- 📱 **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+-  **Secure Authentication**: User registration and login with password hashing
+-  **Cheating Detection**: Monitors tab switches, window blur, and fullscreen exits
+-  **Timer Management**: Real-time countdown timer for exam duration
+-  **Result Tracking**: Comprehensive result storage with score calculation
+-  **Course Content**: Web development courses and learning materials
+-  **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 
 ## Requirements
 
@@ -87,8 +87,10 @@ online-exam-monitoring-system/
 ├── start-exam.php           # Pre-exam setup page
 ├── exam.php                 # Main exam interface
 ├── result.php              # Results display page
+├── log_event.php           # Violation event logging handler
 │
 ├── includes/
+│   ├── config.php          # Configuration and database setup
 │   ├── db.php              # Database connection
 │   ├── auth.php            # Authentication functions
 │   └── functions.php       # Utility functions
@@ -112,7 +114,8 @@ online-exam-monitoring-system/
 │   └── logout.php          # Logout handler
 │
 └── db/
-    └── database.sql        # Database schema and sample data
+    ├── database.sql        # Complete database schema and sample data
+    └── violations_tables.sql  # Additional violation tracking tables (legacy)
 ```
 
 ## Usage
@@ -130,7 +133,9 @@ online-exam-monitoring-system/
 
 1. **Add Questions**: Manually insert questions into the `questions` table
 2. **View Results**: Check the `results` table for all exam attempts
-3. **User Management**: Manage users through the `users` table
+3. **Monitor Violations**: Review `exam_violations` table for detailed violation logs
+4. **Session Management**: Track active and completed sessions in `exam_sessions` table
+5. **User Management**: Manage users through the `users` table
 
 ## Cheating Detection
 
@@ -138,15 +143,25 @@ The system monitors the following activities:
 
 - **Tab Switch**: Detects when user switches to another browser tab
 - **Window Blur**: Detects when the browser window loses focus
-- **Fullscreen Exit**: Detects when user exits fullscreen mode
-- **Developer Tools**: Prevents access to browser developer tools (F12, Ctrl+Shift+I)
+- **Fullscreen Exit**: Detects when user exits fullscreen mode (15-second grace period to return)
+- **Cursor Tracking**: Monitors mouse/pointer leaving the browser window or document area
+- **Developer Tools**: Prevents access to browser developer tools (F12, Ctrl+Shift+I, Ctrl+U)
+- **Context Menu**: Disables right-click context menu during exam
 
-If any violation is detected, the exam is immediately terminated and marked as "cheated".
+### Violation Escalation System
+
+The system uses a **3-strike policy** for violations:
+
+1. **First Violation**: Warning message displayed
+2. **Second Violation**: Final warning message displayed
+3. **Third Violation**: Exam immediately terminated and marked as "cheated"
+
+All violations are logged to the database with timestamps and event details for administrative review.
 
 ## Database Schema
 
 ### Users Table
-- `id`: Primary key
+- `user_id`: Primary key
 - `name`: User's full name
 - `email`: Unique email address
 - `password`: Hashed password
@@ -158,6 +173,23 @@ If any violation is detected, the exam is immediately terminated and marked as "
 - `option_a`, `option_b`, `option_c`, `option_d`: Answer options
 - `correct_option`: Correct answer (a, b, c, or d)
 - `created_at`: Creation timestamp
+
+### Exam Sessions Table
+- `session_id`: Primary key
+- `user_id`: Foreign key to users table
+- `started_at`: Session start timestamp
+- `ended_at`: Session end timestamp (NULL if active)
+- `ended_reason`: Reason for ending ('completed', 'terminated', 'timeout', 'cheated')
+- `score`: Final exam score (if completed)
+- `created_at`: Session creation timestamp
+
+### Exam Violations Table
+- `violation_id`: Primary key
+- `session_id`: Foreign key to exam_sessions table
+- `user_id`: Foreign key to users table
+- `event_type`: Type of violation (e.g., 'blur', 'fullscreen_exit', 'cursor_leave')
+- `event_time`: Timestamp of the violation
+- `details`: Additional details about the violation
 
 ### Results Table
 - `id`: Primary key
@@ -175,6 +207,9 @@ If any violation is detected, the exam is immediately terminated and marked as "
 - XSS protection with `htmlspecialchars()`
 - Session management for authentication
 - Secure routes (exam pages require login)
+- Real-time violation tracking and logging
+- Transaction-based database operations for data integrity
+- Event debouncing to prevent duplicate violation counts
 
 ## Customization
 
@@ -229,6 +264,18 @@ This project is open source and available for educational purposes.
 
 For issues or questions, please check the code comments or contact the development team.
 
+## Recent Updates
+
+### Latest Improvements (November 2025)
+
+- ✅ **Enhanced Cursor Detection**: Improved mouse/pointer tracking to detect when cursor leaves the browser window
+- ✅ **Improved Exit Logic**: Refactored violation handling with 3-strike escalation system
+- ✅ **Session Management**: Added comprehensive exam session tracking with `exam_sessions` table
+- ✅ **Violation Logging**: Detailed violation tracking with timestamps and event types in `exam_violations` table
+- ✅ **Fullscreen Grace Period**: Reduced countdown timer to 15 seconds for returning to fullscreen mode
+- ✅ **Event Debouncing**: Prevents duplicate violation counts from rapid-fire events
+- ✅ **Better Error Handling**: Enhanced error messages and database connection management
+
 ## Future Enhancements
 
 - Admin panel for question management
@@ -237,6 +284,7 @@ For issues or questions, please check the code comments or contact the developme
 - PDF result generation
 - Multiple exam types
 - Question randomization improvements
+- Real-time violation monitoring dashboard
 
 ---
 
